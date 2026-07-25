@@ -528,6 +528,7 @@ export function resetAllMetrics(): void {
   resetUsageAnomalyDetectorMetrics();
   resetReplicaMetrics();
   resetApiKeyLookupMetrics();
+  resetSloBurnMetrics();
 }
 
 // ── Replica routing metrics ───────────────────────────────────────────────────
@@ -686,4 +687,72 @@ export function resetReplicaMetrics(): void {
   dbPrimaryQueriesTotal.reset();
   dbReplicaFallbacksTotal.reset();
   dbReplicaFailuresTotal.reset();
+}
+
+// ── SLO burn-alert metrics ────────────────────────────────────────────────────
+//
+// Metric: slo_burn_alerts_total
+//   Type:    Counter
+//   Labels:  route, alert_type (error_rate | latency_p95)
+//   Purpose: Count the total number of SLO burn alerts fired, sliced by route
+//            and alert type.  A rising counter here means a route is exceeding
+//            its configured SLO threshold repeatedly.
+//
+// Metric: slo_route_error_rate
+//   Type:    Gauge
+//   Labels:  route
+//   Purpose: Last-observed error rate (0–1) for a route within the most recent
+//            evaluation window.  Updated on every evaluator cycle.
+//
+// Metric: slo_route_latency_p95
+//   Type:    Gauge
+//   Labels:  route
+//   Purpose: Last-observed p95 latency (seconds) for a route within the most
+//            recent evaluation window.  Updated on every evaluator cycle.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const sloBurnAlertsTotal = new client.Counter({
+  name: 'slo_burn_alerts_total',
+  help: 'Total number of SLO burn alerts fired per route and alert type',
+  labelNames: ['route', 'alert_type'] as const,
+});
+
+const sloRouteErrorRate = new client.Gauge({
+  name: 'slo_route_error_rate',
+  help: 'Last-observed error rate (0–1) for a route in the most recent SLO evaluation window',
+  labelNames: ['route'] as const,
+});
+
+const sloRouteLatencyP95 = new client.Gauge({
+  name: 'slo_route_latency_p95',
+  help: 'Last-observed p95 latency (seconds) for a route in the most recent SLO evaluation window',
+  labelNames: ['route'] as const,
+});
+
+register.registerMetric(sloBurnAlertsTotal);
+register.registerMetric(sloRouteErrorRate);
+register.registerMetric(sloRouteLatencyP95);
+
+export type SloAlertType = 'error_rate' | 'latency_p95';
+
+/** Increment the SLO burn-alert counter for a specific route + alert type. */
+export function recordSloBurnAlert(route: string, alertType: SloAlertType): void {
+  sloBurnAlertsTotal.inc({ route, alert_type: alertType });
+}
+
+/** Update the last-observed error rate gauge for a route. */
+export function recordSloRouteErrorRate(route: string, value: number): void {
+  sloRouteErrorRate.set({ route }, value);
+}
+
+/** Update the last-observed p95 latency gauge for a route (in seconds). */
+export function recordSloRouteLatencyP95(route: string, valueSeconds: number): void {
+  sloRouteLatencyP95.set({ route }, valueSeconds);
+}
+
+/** Reset SLO burn-alert metrics. Used in tests to isolate metric state. */
+export function resetSloBurnMetrics(): void {
+  sloBurnAlertsTotal.reset();
+  sloRouteErrorRate.reset();
+  sloRouteLatencyP95.reset();
 }

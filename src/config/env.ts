@@ -215,6 +215,19 @@ export const envSchema = z
     USAGE_ANOMALY_WINDOW_MS: z.coerce.number().int().positive().default(300_000),
     USAGE_ANOMALY_BASELINE_WINDOWS: z.coerce.number().int().positive().default(12),
     USAGE_ANOMALY_DEDUP_WINDOW_MS: z.coerce.number().int().positive().optional(),
+
+    // SLO burn-alert evaluator
+    /**
+     * SLO_EVAL_INTERVAL_MS — how often the background SLO evaluator runs.
+     * Defaults to 60 seconds.  Set to 0 to disable the background job
+     * (you can still trigger evaluation via the admin API).
+     */
+    SLO_EVAL_INTERVAL_MS: z.coerce.number().int().nonnegative().default(60_000),
+    /**
+     * SLO_ALERT_WEBHOOK_URL — optional URL to POST SLO burn alerts to.
+     * When absent, violations are recorded in Prometheus only.
+     */
+    SLO_ALERT_WEBHOOK_URL: z.string().url().optional(),
   })
   .superRefine((values, ctx) => {
     if (values.SOROBAN_RPC_ENABLED && !values.SOROBAN_RPC_URL) {

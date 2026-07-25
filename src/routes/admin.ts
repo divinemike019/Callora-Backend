@@ -17,6 +17,7 @@ import {
 import { createAdminWebhooksRouter } from './admin/webhooks.js';
 import { createAdminApisRouter } from './admin/apis.js';
 import { createAdminHealthProbesRouter } from './admin/health/probes.js';
+import { createAdminSloRouter } from './admin/slo.js';
 
 const TRUST_PROXY = process.env.TRUST_PROXY_HEADERS === 'true';
 const usageStore: UsageAdminStore = createUsageStore();
@@ -219,5 +220,16 @@ router.use('/apis', createAdminApisRouter());
 //          GET /api/admin/health/probes/:component
 // ---------------------------------------------------------------------------
 router.use('/health/probes', createAdminHealthProbesRouter());
+
+// ---------------------------------------------------------------------------
+// Per-route SLO threshold management and evaluation
+// Mounts:  GET    /api/admin/slo/thresholds
+//          POST   /api/admin/slo/thresholds
+//          GET    /api/admin/slo/thresholds/:id
+//          PUT    /api/admin/slo/thresholds/:id
+//          DELETE /api/admin/slo/thresholds/:id
+//          POST   /api/admin/slo/thresholds/evaluate
+// ---------------------------------------------------------------------------
+router.use('/slo', createAdminSloRouter());
 
 export default router;

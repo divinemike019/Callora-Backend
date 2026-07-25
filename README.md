@@ -395,5 +395,28 @@ This repo is part of [Callora](https://github.com/your-org/callora):
 - Frontend: `callora-frontend`
 - Contracts: `callora-contracts`
 
+## Per-Route SLO Alert Thresholds
+
+Administrators can configure per-route SLO thresholds (error rate and p95 latency) that trigger Prometheus metrics and optional webhook alerts when burn is detected.
+
+- `GET  /api/admin/slo/thresholds` – list all configured thresholds
+- `POST /api/admin/slo/thresholds` – create a new threshold
+- `GET  /api/admin/slo/thresholds/:id` – fetch one threshold
+- `PUT  /api/admin/slo/thresholds/:id` – update a threshold
+- `DELETE /api/admin/slo/thresholds/:id` – remove a threshold
+- `POST /api/admin/slo/thresholds/evaluate` – trigger an immediate evaluation
+
+Three Prometheus metrics are emitted:
+- `slo_burn_alerts_total{route, alert_type}` — counter of burn alerts fired
+- `slo_route_error_rate{route}` — last-observed error rate gauge
+- `slo_route_latency_p95{route}` — last-observed p95 latency gauge (seconds)
+
+See [docs/slo-alert-thresholds.md](./docs/slo-alert-thresholds.md) for full API reference, webhook payload, Prometheus metrics, and background job wiring.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `SLO_EVAL_INTERVAL_MS` | No | `60000` | Background SLO evaluation polling interval (ms) |
+| `SLO_ALERT_WEBHOOK_URL` | No | — | Webhook URL to POST SLO burn alerts to |
+
 ## Security Audit Logging
 Admin events are routed into an isolated, structured Pino log stream containing the channel label `admin_action` for clean alerting profiles.
